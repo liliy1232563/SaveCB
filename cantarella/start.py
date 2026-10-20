@@ -79,8 +79,8 @@ class script(object):
 """
     ABOUT_TXT = """<b>ℹ️ About This Bot</b>
 <blockquote><b>╭────[ 🧩 Technical Stack ]────⍟</b>
-<b>├⍟ 🤖 Bot Name : <a href=http://t.me/THEUPDATEDGUYS_Bot>Save Content</a></b>
-<b>├⍟ 👨‍💻 Developer : <a href=https://t.me/DmOwner>Ⓜ️ark X cantarella</a></b>
+<b>├⍟ 🤖 Bot Name : <a href=http://t.me/PRO_Save_Restricted_Bot>Save Content</a></b>
+<b>├⍟ 👨‍💻 Developer : <a href=https://t.me/Tg_jiro/24>Jɪʀᴏ</a></b>
 <b>├⍟ 📚 Library : <a href='https://docs.pyrogram.org/'>Pyrogram Async</a></b>
 <b>├⍟ 🐍 Language : <a href='https://www.python.org/'>Python 3.11+</a></b>
 <b>├⍟ 🗄 Database : <a href='https://www.mongodb.com/'>MongoDB Atlas Cluster</a></b>
@@ -115,7 +115,7 @@ class script(object):
 <b>⏳ ETA:</b> <code>{eta}</code>
 </blockquote>
 """
-    CAPTION = """<b><a href="https://t.me/THEUPDATEDGUYS"></a></b>\n\n<b>⚜️ Powered By : <a href="https://t.me/THEUPDATEDGUYS">THE UPDATED GUYS 😎</a></b>"""
+    CAPTION = """<b><a href="https://t.me/Solurix_bots"></a></b>\n\n<b>⚜️ Powered By : <a href="https://t.me/Solurix_bots">THE UPDATED GUYS 😎</a></b>"""
     LIMIT_REACHED = """<b>🚫 Daily Limit Exceeded</b>
 <b>Your 10 free saves for today have been used.</b>
 <i>Quota resets automatically after 24 hours from first download.</i>
@@ -239,19 +239,19 @@ async def send_start(client: Client, message: Message):
         photo_url = response.json()["url"]
     except Exception as e:
         logger.error(f"Failed to fetch image from API: {e}")
-        photo_url = "https://i.postimg.cc/kX9tjGXP/16.png"
+        photo_url = "https://graph.org/file/adb0e1f3359b442608fcb-5668a56c74f6a2fd22.jpg"
     buttons = [
         [
-            InlineKeyboardButton("💎 Buy Premium", callback_data="buy_premium"),
-            InlineKeyboardButton("🆘 Help & Guide", callback_data="help_btn")
+            InlineKeyboardButton("💎 Bᴜʏ Pʀᴇᴍɪᴜᴍ", callback_data="buy_premium"),
+            InlineKeyboardButton("🆘 Hᴇʟᴘ & Gᴜɪᴅᴇ", callback_data="help_btn")
         ],
         [
-            InlineKeyboardButton("⚙️ Settings Panel", callback_data="settings_btn"),
-            InlineKeyboardButton("ℹ️ About Bot", callback_data="about_btn")
+            InlineKeyboardButton("⚙️ Sᴇᴛᴛɪɴɢs Pᴀɴᴇʟ", callback_data="settings_btn"),
+            InlineKeyboardButton("ℹ️ Aʙᴏᴜᴛ Bᴏᴛ", callback_data="about_btn")
         ],
         [
-            InlineKeyboardButton('📢 Channels', callback_data="channels_info"),
-            InlineKeyboardButton('👨‍💻 Developers', callback_data="dev_info")
+            InlineKeyboardButton('📢 Cʜᴀɴɴᴇʟs', callback_data="channels_info"),
+            InlineKeyboardButton('👨‍💻 Dᴇᴠᴇʟᴏᴘᴇʀs', callback_data="dev_info")
         ]
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
@@ -276,8 +276,8 @@ async def send_help(client: Client, message: Message):
 @Client.on_message(filters.command(["plan", "myplan", "premium"]))
 async def send_plan(client: Client, message: Message):
     buttons = [
-        [InlineKeyboardButton("📸 Send Payment Proof", url="https://t.me/DmOwner")],
-        [InlineKeyboardButton("❌ Close Menu", callback_data="close_btn")]
+        [InlineKeyboardButton("📸 Sᴇɴᴅ Pᴀʏᴍᴇɴᴛ Pʀᴏᴏꜰ", url="https://t.me/DmOwner")],
+        [InlineKeyboardButton("❌ Cʟᴏsᴇ Mᴇɴᴜ", callback_data="close_btn")]
     ]
     await client.send_photo(
         chat_id=message.chat.id,
@@ -508,8 +508,8 @@ async def button_callbacks(client: Client, callback_query: CallbackQuery):
         await settings_panel(client, callback_query)
     elif data == "buy_premium":
         buttons = [
-            [InlineKeyboardButton("📸 Send Payment Proof", url="https://t.me/DmOwner")],
-            [InlineKeyboardButton("⬅️ Back to Home", callback_data="start_btn")]
+            [InlineKeyboardButton("📸 Sᴇɴᴅ Pᴀʏᴍᴇɴᴛ Pʀᴏᴏꜰ", url="https://t.me/Tg_jiro/24")],
+            [InlineKeyboardButton("⬅️ Bᴀᴄᴋ ᴛᴏ Hᴏᴍᴇ", callback_data="start_btn")]
         ]
         await client.edit_message_media(
             chat_id=message.chat.id,
@@ -521,7 +521,7 @@ async def button_callbacks(client: Client, callback_query: CallbackQuery):
             reply_markup=InlineKeyboardMarkup(buttons)
         )
     elif data == "help_btn":
-        buttons = [[InlineKeyboardButton("⬅️ Back to Home", callback_data="start_btn")]]
+        buttons = [[InlineKeyboardButton("⬅️ Bᴀᴄᴋ ᴛᴏ Hᴏᴍᴇ", callback_data="start_btn")]]
         await client.edit_message_caption(
             chat_id=message.chat.id,
             message_id=message.id,
@@ -531,7 +531,7 @@ async def button_callbacks(client: Client, callback_query: CallbackQuery):
         )
   
     elif data == "about_btn":
-        buttons = [[InlineKeyboardButton("⬅️ Back to Home", callback_data="start_btn")]]
+        buttons = [[InlineKeyboardButton("⬅️ Bᴀᴄᴋ ᴛᴏ Hᴏᴍᴇ", callback_data="start_btn")]]
         await client.edit_message_caption(
             chat_id=message.chat.id,
             message_id=message.id,
@@ -549,19 +549,19 @@ async def button_callbacks(client: Client, callback_query: CallbackQuery):
             photo_url = response.json()["url"]
         except Exception as e:
             logger.error(f"Failed to fetch image from API: {e}")
-            photo_url = "https://i.postimg.cc/cC7txyhz/15.png"
+            photo_url = "https://graph.org/file/adb0e1f3359b442608fcb-5668a56c74f6a2fd22.jpg"
         buttons = [
             [
-                InlineKeyboardButton("💎 Buy Premium", callback_data="buy_premium"),
-                InlineKeyboardButton("🆘 Help & Guide", callback_data="help_btn")
+                InlineKeyboardButton("💎 Bᴜʏ Pʀᴇᴍɪᴜᴍ", callback_data="buy_premium"),
+                InlineKeyboardButton("🆘 Hᴇʟᴘ & Gᴜɪᴅᴇ", callback_data="help_btn")
             ],
             [
-                InlineKeyboardButton("⚙️ Settings Panel", callback_data="settings_btn"),
-                InlineKeyboardButton("ℹ️ About Bot", callback_data="about_btn")
+                InlineKeyboardButton("⚙️ Sᴇᴛᴛɪɴɢs Pᴀɴᴇʟ", callback_data="settings_btn"),
+                InlineKeyboardButton("ℹ️ Aʙᴏᴜᴛ Bᴏᴛ", callback_data="about_btn")
             ],
             [
-                InlineKeyboardButton('📢 Channels', callback_data="channels_info"),
-                InlineKeyboardButton('👨‍💻 Developers', callback_data="dev_info")
+                InlineKeyboardButton('📢 Cʜᴀɴɴᴇʟs', callback_data="channels_info"),
+                InlineKeyboardButton('👨‍💻 Dᴇᴠᴇʟᴏᴘᴇʀs', callback_data="dev_info")
             ]
         ]
         await client.edit_message_media(
