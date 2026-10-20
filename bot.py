@@ -1,11 +1,12 @@
+
 import asyncio
 import datetime
-import sys
-import os
 from datetime import timezone, timedelta
-from pyrogram import Client, filters, enums, __version__ as pyrogram_version
+
+from pyrogram import Client, filters, __version__ as pyrogram_version
 from pyrogram.types import Message, BotCommand
-from pyrogram.errors import FloodWait, RPCError
+from pyrogram.errors import FloodWait
+
 from config import API_ID, API_HASH, BOT_TOKEN, LOG_CHANNEL, ADMINS
 from database.db import db
 from logger import LOGGER
@@ -19,17 +20,18 @@ except ImportError:
 logger = LOGGER(__name__)
 IST = timezone(timedelta(hours=5, minutes=30))
 
-# Small cache for your ~200 users to prevent DB lag
+# Cache to reduce repeated database checks
 USER_CACHE = set()
 
 LOGO = r"""
-  ██████╗  ██╗  ██╗  █████╗  ███╗   ██╗ ██████╗   █████╗  ██╗      
-  ██╔══██╗ ██║  ██║ ██╔══██╗ ████╗  ██║ ██╔══██╗ ██╔══██╗ ██║      
-  ██║  ██║ ███████║ ███████║ ██╔██╗ ██║ ██████╔╝ ███████║ ██║      
-  ██║  ██║ ██╔══██║ ██╔══██║ ██║╚██╗██║ ██╔═══╝  ██╔══██║ ██║      
-  ██████╔╝ ██║  ██║ ██║  ██║ ██║ ╚████║ ██║      ██║  ██║ ███████
-    𝙱𝙾𝚃 𝚆𝙾𝚁𝙺𝙸𝙽𝙶 𝙿𝚁𝙾𝙿𝙴𝚁𝙻𝚈....
+  ██████╗  ██╗  ██╗  █████╗  ███╗   ██╗ ██████╗
+  ██╔══██╗ ██║  ██║ ██╔══██╗ ████╗  ██║ ██╔══██╗
+  ██║  ██║ ███████║ ███████║ ██╔██╗ ██║ ██████╔╝
+  ██║  ██║ ██╔══██║ ██╔══██╗ ██║╚██╗██║ ██╔═══╝
+  ██████╔╝ ██║  ██║ ██║  ██║ ██║ ╚████║ ██║
+       BOT WORKING PROPERLY....
 """
+
 
 class Bot(Client):
     def __init__(self):
@@ -39,7 +41,7 @@ class Bot(Client):
             api_hash=API_HASH,
             bot_token=BOT_TOKEN,
             plugins=dict(root="cantarella"),
-            workers=10, 
+            workers=10,
             sleep_threshold=15,
             max_concurrent_transmissions=5,
             ipv6=False,
@@ -50,7 +52,12 @@ class Bot(Client):
     async def start(self):
         print(LOGO)
 
-        # 1. Start keep-alive BEFORE attempting Telegram login
+        # Prevent duplicate client startup
+        if self.is_connected:
+            logger.warning("Client is already connected; skipping start.")
+            return
+
+        # Start keep-alive once
         if keep_alive and not self._keep_alive_started:
             try:
                 loop = asyncio.get_running_loop()
@@ -58,42 +65,48 @@ class Bot(Client):
                     keep_alive(loop)
                 except TypeError:
                     keep_alive()
+
                 self._keep_alive_started = True
                 logger.info("Keep-alive server started.")
+
             except Exception as e:
                 logger.warning(f"Keep-alive failed: {e}")
 
-        # 2. FIX FOR FLOOD WAIT: Resilient Login Loop
+        # Retry FloodWait only. Other errors must stop startup.
         while True:
             try:
                 await super().start()
-                break # Success!
+                break
             except FloodWait as e:
                 wait_time = int(e.value) + 10
-                logger.warning(f"FLOOD_WAIT detected during login. Sleeping for {wait_time}s...")
+                logger.warning(
+                    f"FloodWait: retrying in {wait_time} seconds."
+                )
                 await asyncio.sleep(wait_time)
             except Exception as e:
                 logger.error(f"Critical Startup Error: {e}")
-                await asyncio.sleep(15)
+                raise
 
         me = await self.get_me()
 
-        # 3. DB Stats
+        # Database statistics
         try:
             user_count = await db.total_users_count()
-            logger.info(f"MongoDB Connected: {user_count} users found.")
+            logger.info(
+                f"MongoDB connected: {user_count} users found."
+            )
         except Exception as e:
             logger.error(f"DB stats failed: {e}")
             user_count = "Unknown"
 
-        # 4. Startup notification
+        # Startup notification
         now = datetime.datetime.now(IST)
         startup_text = (
-            f"<b><i>🤖 Bot Successfully Started ♻️</i></b>\n\n"
+            "<b><i>🤖 Bot Successfully Started ♻️</i></b>\n\n"
             f"<b>Bot:</b> @{me.username}\n"
             f"<b>Users:</b> <code>{user_count} / 200</code>\n"
             f"<b>Time:</b> <code>{now.strftime('%I:%M %p')} IST</code>\n\n"
-            f"<b>Developed by @cantarellabots</b>"
+            "<b>Developed by @cantarellabots</b>"
         )
 
         try:
@@ -102,15 +115,28 @@ class Bot(Client):
         except Exception as e:
             logger.error(f"Failed to send startup log: {e}")
 
-        await self.set_bot_commands_list()
+        try:
+            await self.set_bot_commands_list()
+        except Exception as e:
+            logger.error(f"Failed to set bot commands: {e}")
 
     async def stop(self, *args):
         try:
-            await self.send_message(LOG_CHANNEL, "<b><i>❌ Bot is going Offline</i></b>")
-        except:
-            pass
-        await asyncio.shield(super().stop())
-        logger.info("Bot stopped cleanly")
+            if self.is_connected:
+                await self.send_message(
+                    LOG_CHANNEL,
+                    "<b><i>❌ Bot is going Offline</i></b>"
+                )
+        except Exception as e:
+            logger.warning(f"Offline notification failed: {e}")
+
+        try:
+            if self.is_connected:
+                await asyncio.shield(super().stop())
+        except Exception as e:
+            logger.error(f"Bot stop failed: {e}")
+
+        logger.info("Bot stopped cleanly.")
 
     async def set_bot_commands_list(self):
         commands = [
@@ -133,40 +159,58 @@ class Bot(Client):
             BotCommand("set_repl_word", "Add replace word"),
             BotCommand("rem_repl_word", "Remove replace word"),
         ]
+
         await self.set_bot_commands(commands)
+        logger.info("Bot commands updated.")
+
 
 BotInstance = Bot()
 
-@BotInstance.on_message(filters.private & filters.incoming, group=-1)
+
+@BotInstance.on_message(
+    filters.private & filters.incoming,
+    group=-1
+)
 async def new_user_log(bot: Client, message: Message):
     user = message.from_user
+
     if not user or user.id in USER_CACHE:
         return
 
-    if not await db.is_user_exist(user.id):
-        await db.add_user(user.id, user.first_name)
-        
-        now = datetime.datetime.now(IST)
-        log_text = (
-            f"<b>#NewUser 👤</b>\n"
-            f"<b>User:</b> {user.mention}\n"
-            f"<b>ID:</b> <code>{user.id}</code>\n"
-            f"<b>Time:</b> {now.strftime('%I:%M %p')} IST"
-        )
-        try:
-            await bot.send_message(LOG_CHANNEL, log_text)
-        except:
-            pass
-    
-    USER_CACHE.add(user.id)
+    try:
+        if not await db.is_user_exist(user.id):
+            await db.add_user(user.id, user.first_name)
 
-@BotInstance.on_message(filters.command("cmd") & filters.user(ADMINS))
+            now = datetime.datetime.now(IST)
+            log_text = (
+                "<b>#NewUser 👤</b>\n"
+                f"<b>User:</b> {user.mention}\n"
+                f"<b>ID:</b> <code>{user.id}</code>\n"
+                f"<b>Time:</b> {now.strftime('%I:%M %p')} IST"
+            )
+
+            try:
+                await bot.send_message(LOG_CHANNEL, log_text)
+            except Exception as e:
+                logger.warning(f"New user log failed: {e}")
+
+        USER_CACHE.add(user.id)
+
+    except Exception as e:
+        logger.error(f"New user database logging failed: {e}")
+
+
+@BotInstance.on_message(
+    filters.command("cmd") & filters.user(ADMINS)
+)
 async def update_commands(bot: Client, message: Message):
     try:
         await bot.set_bot_commands_list()
         await message.reply_text("✅ Commands menu updated!")
     except Exception as e:
+        logger.error(f"Command update failed: {e}")
         await message.reply_text(f"❌ Error: {e}")
+
 
 if __name__ == "__main__":
     BotInstance.run()
