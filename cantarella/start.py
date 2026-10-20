@@ -19,11 +19,11 @@ from database.db import db
 import math
 from logger import LOGGER
 logger = LOGGER(__name__)
-SUBSCRIPTION = os.environ.get('SUBSCRIPTION', 'https://graph.org/file/242b7f1b52743938d81f1.jpg')
+SUBSCRIPTION = os.environ.get('SUBSCRIPTION', 'https://graph.org/file/1b59bc506d51764dbb953-863454c01a8f29f225.jpg')
 FREE_LIMIT_SIZE = 2 * 1024 * 1024 * 1024
 FREE_LIMIT_DAILY = 10
-UPI_ID = os.environ.get("UPI_ID", "your_upi@oksbi")
-QR_CODE = os.environ.get("QR_CODE", "https://graph.org/file/242b7f1b52743938d81f1.jpg")
+UPI_ID = os.environ.get("UPI_ID", "muftashir@fam")
+QR_CODE = os.environ.get("QR_CODE", "https://graph.org/file/e935e5ee94c5d0aba496f-71e8d49a9d842cc9bf.jpg")
 REACTIONS = [
     "👍", "❤️", "🔥", "🥰", "👏", "😁", "🤔", "🤯", "😱", "🤬",
     "😢", "🎉", "🤩", "🤮", "💩", "🙏", "👌", "🕊", "🤡", "🥱",
@@ -36,9 +36,9 @@ REACTIONS = [
 ]
 
 
-dev_text = "👨‍💻 Mind Behind This Bot:\n• @DmOwner\n• @akaza7902"
+dev_text = "👨‍💻 Mind Behind This Bot:\n• @EmptyJohan\n• @GabimaruYami"
 expected_dev_hash = "b9e63b7578bdec13f3cb3162fe5f5e93dccaba3bfd5c8ddacbb90ffdcdcce402"
-channels_text = "📢 Official Channels:\n• @ReX_update\n• @THEUPDATEDGUYS\n\nStay updated for new features!"
+channels_text = "📢 Official Channels:\n• @Solurix_bots\n• @THEUPDATEDGUYS\n\nStay updated for new features!"
 expected_channels_hash = "e19212e571bd0f6626450dd790029d392c0748c554d4b386a0c0752f4148d37d"
 
 if (
