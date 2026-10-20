@@ -223,23 +223,25 @@ def progress(current, total, message, type):
                 progress.cache.pop(task_id, None)
         except:
             pass
+
 @Client.on_message(filters.command(["start"]))
 async def send_start(client: Client, message: Message):
     if not await db.is_user_exist(message.from_user.id):
         await db.add_user(message.from_user.id, message.from_user.first_name)
+
     try:
         await message.react(emoji=random.choice(REACTIONS), big=True)
     except:
         pass
-    apis = ["https://api.waifu.pics/sfw/waifu", "https://nekos.life/api/v2/img/waifu"]
-    api_url = random.choice(apis)
-    try:
-        response = requests.get(api_url)
-        response.raise_for_status()
-        photo_url = response.json()["url"]
-    except Exception as e:
-        logger.error(f"Failed to fetch image from API: {e}")
-        photo_url = "https://graph.org/file/adb0e1f3359b442608fcb-5668a56c74f6a2fd22.jpg"
+
+    photos = [
+        "https://graph.org/file/df8726fb8d213845f1c3b-3a9fa28c3c2e0057d1.jpg",
+        "https://graph.org/file/f3875fabc99223d7e09f2-d771797c300ff6fd46.jpg",
+        "https://graph.org/file/aaaa17394fbb1f5abcc57-a66026bd65c8c63453.jpg",
+        "https://graph.org/file/56936ca35108ec198b186-e2ec779372d574ecf7.jpg"
+    ]
+    photo_url = random.choice(photos)
+
     buttons = [
         [
             InlineKeyboardButton("💎 Bᴜʏ Pʀᴇᴍɪᴜᴍ", callback_data="buy_premium"),
@@ -250,20 +252,27 @@ async def send_start(client: Client, message: Message):
             InlineKeyboardButton("ℹ️ Aʙᴏᴜᴛ Bᴏᴛ", callback_data="about_btn")
         ],
         [
-            InlineKeyboardButton('📢 Cʜᴀɴɴᴇʟs', callback_data="channels_info"),
-            InlineKeyboardButton('👨‍💻 Dᴇᴠᴇʟᴏᴘᴇʀs', callback_data="dev_info")
+            InlineKeyboardButton("📢 Cʜᴀɴɴᴇʟs", callback_data="channels_info"),
+            InlineKeyboardButton("👨‍💻 Dᴇᴠᴇʟᴏᴘᴇʀs", callback_data="dev_info")
         ]
     ]
+
     reply_markup = InlineKeyboardMarkup(buttons)
     bot = await client.get_me()
+
     await client.send_photo(
         chat_id=message.chat.id,
         photo=photo_url,
-        caption=script.START_TXT.format(message.from_user.mention, bot.username, bot.first_name),
+        caption=script.START_TXT.format(
+            message.from_user.mention,
+            bot.username,
+            bot.first_name
+        ),
         reply_markup=reply_markup,
         reply_to_message_id=message.id,
         parse_mode=enums.ParseMode.HTML
     )
+
 @Client.on_message(filters.command(["help"]))
 async def send_help(client: Client, message: Message):
     buttons = [[InlineKeyboardButton("❌ Close Menu", callback_data="close_btn")]]
