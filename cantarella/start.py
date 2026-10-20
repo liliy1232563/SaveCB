@@ -550,15 +550,15 @@ async def button_callbacks(client: Client, callback_query: CallbackQuery):
         )
     elif data == "start_btn":
         bot = await client.get_me()
-        apis = ["https://api.waifu.pics/sfw/waifu", "https://nekos.life/api/v2/img/waifu"]
-        api_url = random.choice(apis)
-        try:
-            response = requests.get(api_url)
-            response.raise_for_status()
-            photo_url = response.json()["url"]
-        except Exception as e:
-            logger.error(f"Failed to fetch image from API: {e}")
-            photo_url = "https://graph.org/file/adb0e1f3359b442608fcb-5668a56c74f6a2fd22.jpg"
+
+        photos = [
+            "https://graph.org/file/df8726fb8d213845f1c3b-3a9fa28c3c2e0057d1.jpg",
+            "https://graph.org/file/f3875fabc99223d7e09f2-d771797c300ff6fd46.jpg",
+            "https://graph.org/file/aaaa17394fbb1f5abcc57-a66026bd65c8c63453.jpg",
+            "https://graph.org/file/56936ca35108ec198b186-e2ec779372d574ecf7.jpg"
+        ]
+        photo_url = random.choice(photos)
+
         buttons = [
             [
                 InlineKeyboardButton("💎 Bᴜʏ Pʀᴇᴍɪᴜᴍ", callback_data="buy_premium"),
@@ -569,16 +569,22 @@ async def button_callbacks(client: Client, callback_query: CallbackQuery):
                 InlineKeyboardButton("ℹ️ Aʙᴏᴜᴛ Bᴏᴛ", callback_data="about_btn")
             ],
             [
-                InlineKeyboardButton('📢 Cʜᴀɴɴᴇʟs', callback_data="channels_info"),
-                InlineKeyboardButton('👨‍💻 Dᴇᴠᴇʟᴏᴘᴇʀs', callback_data="dev_info")
+                InlineKeyboardButton("📢 Cʜᴀɴɴᴇʟs", callback_data="channels_info"),
+                InlineKeyboardButton("👨‍💻 Dᴇᴠᴇʟᴏᴘᴇʀs", callback_data="dev_info")
             ]
         ]
+
         await client.edit_message_media(
             chat_id=message.chat.id,
             message_id=message.id,
             media=InputMediaPhoto(
                 media=photo_url,
-                caption=script.START_TXT.format(callback_query.from_user.mention, bot.username, bot.first_name)
+                caption=script.START_TXT.format(
+                    callback_query.from_user.mention,
+                    bot.username,
+                    bot.first_name
+                ),
+                parse_mode=enums.ParseMode.HTML
             ),
             reply_markup=InlineKeyboardMarkup(buttons)
         )
