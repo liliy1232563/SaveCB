@@ -24,7 +24,7 @@ API_HASH = os.environ.get("API_HASH", "")
 # ==============================
 
 # Add admin user IDs separated by commas in environment variables
-ADMINS = [int(admin) for admin in os.environ.get("ADMINS", "6727651675 7754709357").split(",") if admin]
+ADMINS = [int(admin) for admin in os.environ.get("ADMINS", "6727651675,7754709357").split(",") if admin]
 
 
 # ==============================
