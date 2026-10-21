@@ -101,7 +101,7 @@ class script(object):
 • <b>3 Mᴏɴᴛʜ Pʟᴀɴ:</b> ₹130 / $3 (Sᴀᴠᴇ 20%)
 • <b>Lɪꜰᴇᴛɪᴍᴇ Aᴄᴄᴇss::</b> ₹555 / $5 (Oɴᴇ-Tɪᴍᴇ Pᴀʏᴍᴇɴᴛ)
 <blockquote><b>👇 Sᴇᴄᴜʀᴇ Pᴀʏᴍᴇɴᴛ:</b></blockquote>
-<b>💸 UPI ID:</b> <code>muftashir@fam</code>
+<b>💸 UPI ID:</b> <code>{}</code>
 <b>📸 QR Code:</b> <a href='{}'>Sᴄᴀɴ ᴛᴏ Pᴀʏ</a>
 <i>Aꜰᴛᴇʀ Pᴀʏᴍᴇɴᴛ: Sᴇɴᴅ Sᴄʀᴇᴇɴsʜᴏᴛ ᴛᴏ Aᴅᴍɪɴ ꜰᴏʀ Iɴsᴛᴀɴᴛ Aᴄᴛɪᴠᴀᴛɪᴏɴ.</i>
 """
