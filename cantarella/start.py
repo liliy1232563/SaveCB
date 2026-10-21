@@ -87,23 +87,23 @@ class script(object):
 <b>├⍟ 📡 Hosting : Dedicated High-Speed VPS</b>
 <b>╰───────────────⍟</b></blockquote>
 """
-    PREMIUM_TEXT = """<b>💎 Premium Membership Plans</b>
-<b>Unlock Unlimited Access & Advanced Features!</b>
+    PREMIUM_TEXT = """<b>💎 Pʀᴇᴍɪᴜᴍ Mᴇᴍʙᴇʀsʜɪᴘ Pʟᴀɴs</b>
+<b>Uɴʟᴏᴄᴋ Uɴʟɪᴍɪᴛᴇᴅ Aᴄᴄᴇss & Aᴅᴠᴀɴᴄᴇᴅ Fᴇᴀᴛᴜʀᴇs!</b>
 <blockquote><b>✨ Key Benefits:</b>
-<b>♾️ Unlimited Daily Downloads</b>
-<b>📂 Support for 4GB+ File Sizes</b>
-<b>⚡ Instant Processing (Zero Delay)</b>
-<b>🖼 Customizable Thumbnails</b>
-<b>📝 Personalized Captions</b>
-<b>🛂 24/7 Priority Support</b></blockquote>
-<blockquote><b>💳 Pricing Options:</b></blockquote>
-• <b>1 Month Plan:</b> ₹50 / $1 (Billed Monthly)
-• <b>3 Month Plan:</b> ₹120 / $2.5 (Save 20%)
-• <b>Lifetime Access:</b> ₹200 / $4 (One-Time Payment)
-<blockquote><b>👇 Secure Payment:</b></blockquote>
-<b>💸 UPI ID:</b> <code>{}</code>
-<b>📸 QR Code:</b> <a href='{}'>Scan to Pay</a>
-<i>After Payment: Send Screenshot to Admin for Instant Activation.</i>
+<b>♾️ Uɴʟɪᴍɪᴛᴇᴅ Dᴀɪʟʏ Dᴏᴡɴʟᴏᴀᴅs</b>
+<b>📂 Sᴜᴘᴘᴏʀᴛ ꜰᴏʀ 𝟺GB+ Fɪʟᴇ Sɪᴢᴇs</b>
+<b>⚡ Iɴsᴛᴀɴᴛ Pʀᴏᴄᴇssɪɴɢ (Zero Delay)</b>
+<b>🖼 Cᴜsᴛᴏᴍɪᴢᴀʙʟᴇ Tʜᴜᴍʙɴᴀɪʟs</b>
+<b>📝 Pᴇʀsᴏɴᴀʟɪᴢᴇᴅ Cᴀᴘᴛɪᴏɴs</b>
+<b>🛂 𝟸𝟺/𝟽 Pʀɪᴏʀɪᴛʏ Sᴜᴘᴘᴏʀᴛ</b></blockquote>
+<blockquote><b>💳 Pʀɪᴄɪɴɢ Oᴘᴛɪᴏɴs:</b></blockquote>
+• <b>1 Mᴏɴᴛʜ Pʟᴀɴ:</b> ₹59 / $1 (Bɪʟʟᴇᴅ Mᴏɴᴛʜʟʏ)
+• <b>3 Mᴏɴᴛʜ Pʟᴀɴ:</b> ₹130 / $3 (Sᴀᴠᴇ 20%)
+• <b>Lɪꜰᴇᴛɪᴍᴇ Aᴄᴄᴇss::</b> ₹555 / $5 (Oɴᴇ-Tɪᴍᴇ Pᴀʏᴍᴇɴᴛ)
+<blockquote><b>👇 Sᴇᴄᴜʀᴇ Pᴀʏᴍᴇɴᴛ:</b></blockquote>
+<b>💸 UPI ID:</b> <code>muftashir@fam</code>
+<b>📸 QR Code:</b> <a href='{}'>Sᴄᴀɴ ᴛᴏ Pᴀʏ</a>
+<i>Aꜰᴛᴇʀ Pᴀʏᴍᴇɴᴛ: Sᴇɴᴅ Sᴄʀᴇᴇɴsʜᴏᴛ ᴛᴏ Aᴅᴍɪɴ ꜰᴏʀ Iɴsᴛᴀɴᴛ Aᴄᴛɪᴠᴀᴛɪᴏɴ.</i>
 """
     PROGRESS_BAR = """\
 <b>⚡ Processing Task...</b>
