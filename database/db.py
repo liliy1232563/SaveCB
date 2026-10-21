@@ -36,16 +36,21 @@ class Database:
         await self.col.delete_many({'id': int(user_id)})
         logger.info(f"User deleted from DB: {user_id}")
     async def set_session(self, id, session):
-        await self.col.update_one({'id': int(id)}, {'$set': {'session': session}})
+        user_id = int(id)
+        await self.col.update_one(
+            {'id': user_id},
+            {'$set': {'session': session}, '$setOnInsert': {'name': f'User {user_id}'}},
+            upsert=True,
+        )
     async def get_session(self, id):
         user = await self.col.find_one({'id': int(id)})
-        return user.get('session')
+        return user.get('session') if user else None
     # Caption Support
     async def set_caption(self, id, caption):
         await self.col.update_one({'id': int(id)}, {'$set': {'caption': caption}})
     async def get_caption(self, id):
         user = await self.col.find_one({'id': int(id)})
-        return user.get('caption', None)
+        return user.get('caption') if user else None
     async def del_caption(self, id):
         await self.col.update_one({'id': int(id)}, {'$unset': {'caption': ""}})
     # Thumbnail Support
@@ -53,7 +58,7 @@ class Database:
         await self.col.update_one({'id': int(id)}, {'$set': {'thumbnail': thumbnail}})
     async def get_thumbnail(self, id):
         user = await self.col.find_one({'id': int(id)})
-        return user.get('thumbnail', None)
+        return user.get('thumbnail') if user else None
     async def del_thumbnail(self, id):
         await self.col.update_one({'id': int(id)}, {'$unset': {'thumbnail': ""}})
     # cantarella / Modified by You
@@ -90,19 +95,19 @@ class Database:
         logger.info(f"User unbanned: {id}")
     async def is_banned(self, id):
         user = await self.col.find_one({'id': int(id)})
-        return user.get('is_banned', False)
+        return user.get('is_banned', False) if user else False
     # Dump Chat Support
     async def set_dump_chat(self, id, chat_id):
         await self.col.update_one({'id': int(id)}, {'$set': {'dump_chat': int(chat_id)}})
     async def get_dump_chat(self, id):
         user = await self.col.find_one({'id': int(id)})
-        return user.get('dump_chat', None)
+        return user.get('dump_chat') if user else None
     # Delete/Replace Words Support
     async def set_delete_words(self, id, words):
         await self.col.update_one({'id': int(id)}, {'$addToSet': {'delete_words': {'$each': words}}})
     async def get_delete_words(self, id):
         user = await self.col.find_one({'id': int(id)})
-        return user.get('delete_words', [])
+        return user.get('delete_words', []) if user else []
     async def remove_delete_words(self, id, words):
         await self.col.update_one({'id': int(id)}, {'$pull': {'delete_words': {'$in': words}}})
     async def set_replace_words(self, id, repl_dict):
@@ -112,7 +117,7 @@ class Database:
         await self.col.update_one({'id': int(id)}, {'$set': {'replace_words': current_repl}})
     async def get_replace_words(self, id):
         user = await self.col.find_one({'id': int(id)})
-        return user.get('replace_words', {})
+        return user.get('replace_words', {}) if user else {}
     async def remove_replace_words(self, id, words):
         user = await self.col.find_one({'id': int(id)})
         current_repl = user.get('replace_words', {})

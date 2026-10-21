@@ -128,15 +128,15 @@ Remove all restrictions and enjoy seamless downloading.
 Download files up to 4GB and beyond with no limits!
 """
 def humanbytes(size):
-    if not size:
-        return "0B"
-    power = 2**10
-    n = 0
-    Dic_powerN = {0: ' ', 1: 'K', 2: 'M', 3: 'G', 4: 'T'}
-    while size > power:
-        size /= power
-        n += 1
-    return str(round(size, 2)) + " " + Dic_powerN[n] + 'B'
+    try:
+        size = max(0, float(size or 0))
+    except (TypeError, ValueError):
+        return "0 B"
+    units = ("B", "KB", "MB", "GB", "TB", "PB", "EB")
+    for unit in units:
+        if size < 1024 or unit == units[-1]:
+            return f"{int(size)} B" if unit == "B" else f"{size:.2f} {unit}"
+        size /= 1024
 def TimeFormatter(milliseconds: int) -> str:
     seconds, milliseconds = divmod(int(milliseconds), 1000)
     minutes, seconds = divmod(seconds, 60)
@@ -325,178 +325,319 @@ async def settings_panel(client, callback_query):
     )
 @Client.on_message(filters.text & filters.private & ~filters.regex("^/"))
 async def save(client: Client, message: Message):
-    if "https://t.me/" in message.text:
-       
-        is_limit_reached = await db.check_limit(message.from_user.id)
-        if is_limit_reached:
-            btn = InlineKeyboardMarkup([[InlineKeyboardButton("💎 Upgrade to Premium", callback_data="buy_premium")]])
-            return await message.reply_photo(
-                photo=SUBSCRIPTION,
-                caption=script.LIMIT_REACHED,
-                reply_markup=btn,
-                parse_mode=enums.ParseMode.HTML
-            )
-       
-        if batch_temp.IS_BATCH.get(message.from_user.id) == False:
-            return await message.reply_text("<b>⚠️ A Task is Currently Processing.</b>\n<i>Please wait for completion or use /cancel to stop.</i>", parse_mode=enums.ParseMode.HTML)
-        datas = message.text.split("/")
-        temp = datas[-1].replace("?single", "").split("-")
-        fromID = int(temp[0].strip())
-        try:
-            toID = int(temp[1].strip())
-        except:
-            toID = fromID
-        batch_temp.IS_BATCH[message.from_user.id] = False
-        is_private_link = "https://t.me/c/" in message.text
-        is_batch = "https://t.me/b/" in message.text
-        is_public_link = not is_private_link and not is_batch
-        for msgid in range(fromID, toID + 1):
-           
-            if batch_temp.IS_BATCH.get(message.from_user.id):
+    user = message.from_user
+    text = message.text or ""
+    if not user or "t.me/" not in text:
+        return
+
+    user_id = user.id
+    if await db.check_limit(user_id):
+        btn = InlineKeyboardMarkup([[InlineKeyboardButton("💎 Upgrade to Premium", callback_data="buy_premium")]])
+        return await message.reply_photo(
+            photo=SUBSCRIPTION,
+            caption=script.LIMIT_REACHED,
+            reply_markup=btn,
+            parse_mode=enums.ParseMode.HTML,
+        )
+
+    if batch_temp.IS_BATCH.get(user_id) is False:
+        return await message.reply_text(
+            "<b>⚠️ A Task is Currently Processing.</b>\n"
+            "<i>Please wait for completion or use /cancel to stop.</i>",
+            parse_mode=enums.ParseMode.HTML,
+        )
+
+    from urllib.parse import urlparse
+    try:
+        parsed = urlparse(text.strip())
+        if parsed.scheme not in ("http", "https") or parsed.netloc.lower() not in ("t.me", "www.t.me"):
+            raise ValueError
+        parts = [part for part in parsed.path.split("/") if part]
+        if len(parts) < 2:
+            raise ValueError
+
+        is_private_link = parts[0] == "c"
+        is_batch = parts[0] == "b"
+
+        if is_private_link:
+            if len(parts) != 3 or not parts[1].isdigit():
+                raise ValueError
+            chat_target = int("-100" + parts[1])
+            message_part = parts[2]
+        elif is_batch:
+            if len(parts) != 3:
+                raise ValueError
+            chat_target = parts[1]
+            message_part = parts[2]
+        else:
+            if len(parts) != 2:
+                raise ValueError
+            chat_target = parts[0]
+            message_part = parts[1]
+
+        bounds = message_part.split("-", 1)
+        from_id = int(bounds[0])
+        to_id = int(bounds[1]) if len(bounds) == 2 else from_id
+        if from_id <= 0 or to_id < from_id or to_id - from_id > 1000:
+            raise ValueError
+    except (ValueError, IndexError):
+        return await message.reply_text(
+            "❌ Invalid Telegram link. Link check karke dobara bhejo."
+        )
+
+    batch_temp.IS_BATCH[user_id] = False
+    try:
+        for msgid in range(from_id, to_id + 1):
+            if batch_temp.IS_BATCH.get(user_id):
                 break
-           
-            if is_public_link:
-                username = datas[3]
+
+            if not is_private_link and not is_batch:
                 try:
                     await client.copy_message(
                         chat_id=message.chat.id,
-                        from_chat_id=username,
+                        from_chat_id=chat_target,
                         message_id=msgid,
-                        reply_to_message_id=message.id
+                        reply_to_message_id=message.id,
                     )
-                    await db.add_traffic(message.from_user.id)
+                    await db.add_traffic(user_id)
                     await asyncio.sleep(1)
                     continue
                 except Exception as e:
-                    pass
-            user_data = await db.get_session(message.from_user.id)
-            if user_data is None:
-                await message.reply(
+                    logger.info(f"Public copy failed; trying saved session: {e}")
+
+            user_data = await db.get_session(user_id)
+            if not user_data:
+                await message.reply_text(
                     "<b>🔒 Authentication Required</b>\n\n"
-                    "<i>Access to this content requires login.</i>\n"
-                    "<i>Use /login to securely authorize your account.</i>",
-                    parse_mode=enums.ParseMode.HTML
+                    "<i>Is content ke liye /login se account authorize karo.</i>",
+                    parse_mode=enums.ParseMode.HTML,
                 )
-                batch_temp.IS_BATCH[message.from_user.id] = True
                 return
+
+            acc = Client(
+                "saverestricted",
+                session_string=user_data,
+                api_hash=API_HASH,
+                api_id=API_ID,
+                in_memory=True,
+                max_concurrent_transmissions=10,
+            )
             try:
-                acc = Client(
-                    "saverestricted",
-                    session_string=user_data,
-                    api_hash=API_HASH,
-                    api_id=API_ID,
-                    in_memory=True,
-                    max_concurrent_transmissions=10
-                )
                 await acc.connect()
+                await handle_restricted_content(
+                    client, acc, message, chat_target, msgid
+                )
             except Exception as e:
-                batch_temp.IS_BATCH[message.from_user.id] = True
-                return await message.reply(f"<b>❌ Authentication Failed</b>\n\n<i>Your session may have expired. Please /logout and /login again.</i>\n<code>{e}</code>", parse_mode=enums.ParseMode.HTML)
-            if is_private_link:
-                chatid = int("-100" + datas[4])
-                await handle_restricted_content(client, acc, message, chatid, msgid)
-            elif is_batch:
-                username = datas[4]
-                await handle_restricted_content(client, acc, message, username, msgid)
-            else:
-                username = datas[3]
-                await handle_restricted_content(client, acc, message, username, msgid)
-            await asyncio.sleep(2)
-        batch_temp.IS_BATCH[message.from_user.id] = True
+                logger.exception(f"Restricted download failed for user {user_id}: {e}")
+                await message.reply_text(
+                    "❌ Download failed. Session expire ho sakta hai; "
+                    "/logout karke /login dobara try karo."
+                )
+                return
+            finally:
+                try:
+                    if getattr(acc, "is_connected", False):
+                        await acc.disconnect()
+                except Exception as e:
+                    logger.warning(f"Temporary client disconnect failed: {e}")
+
+            await asyncio.sleep(1)
+    finally:
+        batch_temp.IS_BATCH[user_id] = True
+
 async def handle_restricted_content(client: Client, acc, message: Message, chat_target, msgid):
+    user = message.from_user
+    if not user:
+        return
+
     try:
-        msg: Message = await acc.get_messages(chat_target, msgid)
+        msg = await acc.get_messages(chat_target, msgid)
     except Exception as e:
         logger.error(f"Error fetching message: {e}")
         return
-    if msg.empty:
+
+    if not msg or getattr(msg, "empty", False):
         return
-   
+
     msg_type = get_message_type(msg)
     if not msg_type:
         return
+
     file_size = 0
-    if msg_type == "Document": file_size = msg.document.file_size
-    elif msg_type == "Video": file_size = msg.video.file_size
-    elif msg_type == "Audio": file_size = msg.audio.file_size
-   
-    if file_size > FREE_LIMIT_SIZE:
-        if not await db.check_premium(message.from_user.id):
-            btn = InlineKeyboardMarkup([[InlineKeyboardButton("💎 Upgrade to Premium", callback_data="buy_premium")]])
-            await client.send_message(
-                message.chat.id,
-                script.SIZE_LIMIT,
-                reply_markup=btn,
-                parse_mode=enums.ParseMode.HTML
-            )
-            return
+    media = getattr(msg, msg_type.lower(), None)
+    if media:
+        file_size = getattr(media, "file_size", 0) or 0
+
+    if file_size > FREE_LIMIT_SIZE and not await db.check_premium(user.id):
+        btn = InlineKeyboardMarkup([
+            [InlineKeyboardButton("💎 Upgrade to Premium", callback_data="buy_premium")]
+        ])
+        await client.send_message(
+            message.chat.id,
+            script.SIZE_LIMIT,
+            reply_markup=btn,
+            parse_mode=enums.ParseMode.HTML,
+        )
+        return
+
     if msg_type == "Text":
         try:
-            await client.send_message(message.chat.id, msg.text, entities=msg.entities, parse_mode=enums.ParseMode.HTML)
-            return
-        except:
-            return
-    await db.add_traffic(message.from_user.id)
-    smsg = await client.send_message(message.chat.id, '<b>⬇️ Starting Download...</b>', reply_to_message_id=message.id, parse_mode=enums.ParseMode.HTML)
-   
-    temp_dir = f"downloads/{message.id}"
-    if not os.path.exists(temp_dir): os.makedirs(temp_dir)
+            await client.send_message(
+                message.chat.id,
+                msg.text,
+                entities=msg.entities,
+                reply_to_message_id=message.id,
+            )
+        except Exception as e:
+            logger.warning(f"Text copy failed: {e}")
+        return
+
+    await db.add_traffic(user.id)
+    smsg = await client.send_message(
+        message.chat.id,
+        "<b>⬇️ Starting Download...</b>",
+        reply_to_message_id=message.id,
+        parse_mode=enums.ParseMode.HTML,
+    )
+
+    temp_dir = os.path.join("downloads", str(message.id))
+    down_file = f"{message.id}downstatus.txt"
+    up_file = f"{message.id}upstatus.txt"
+    down_task = None
+    up_task = None
+    file = None
+
     try:
-        asyncio.create_task(downstatus(client, f'{message.id}downstatus.txt', smsg, message.chat.id))
-       
+        os.makedirs(temp_dir, exist_ok=True)
+        down_task = asyncio.create_task(
+            downstatus(client, down_file, smsg, message.chat.id)
+        )
+
         file = await acc.download_media(
             msg,
             file_name=f"{temp_dir}/",
             progress=progress,
-            progress_args=[message, "down"]
+            progress_args=[message, "down"],
         )
-       
-        if os.path.exists(f'{message.id}downstatus.txt'): os.remove(f'{message.id}downstatus.txt')
-    except Exception as e:
-        if batch_temp.IS_BATCH.get(message.from_user.id) or "Cancelled" in str(e):
-            if os.path.exists(temp_dir): shutil.rmtree(temp_dir)
-            return await smsg.edit("❌ **Task Cancelled**")
-        return await smsg.delete()
-    try:
-        asyncio.create_task(upstatus(client, f'{message.id}upstatus.txt', smsg, message.chat.id))
-       
+        if not file or not os.path.isfile(file):
+            raise RuntimeError("Downloaded file not found.")
+
+        if down_task:
+            down_task.cancel()
+            down_task = None
+        if os.path.exists(down_file):
+            os.remove(down_file)
+
+        await smsg.edit("<b>⬆️ Uploading...</b>", parse_mode=enums.ParseMode.HTML)
+        up_task = asyncio.create_task(
+            upstatus(client, up_file, smsg, message.chat.id)
+        )
+
         ph_path = None
-        thumb_id = await db.get_thumbnail(message.from_user.id)
-       
+        thumb_id = await db.get_thumbnail(user.id)
         if thumb_id:
             try:
-                ph_path = await client.download_media(thumb_id, file_name=f"{temp_dir}/custom_thumb.jpg")
+                ph_path = await client.download_media(
+                    thumb_id,
+                    file_name=f"{temp_dir}/custom_thumb.jpg",
+                )
             except Exception as e:
-                logger.error(f"Failed to download custom thumb: {e}")
+                logger.warning(f"Custom thumbnail download failed: {e}")
+
         if not ph_path:
             try:
-                if msg_type == "Video" and msg.video.thumbs:
-                    ph_path = await acc.download_media(msg.video.thumbs[0].file_id, file_name=f"{temp_dir}/thumb.jpg")
-                elif msg_type == "Document" and msg.document.thumbs:
-                    ph_path = await acc.download_media(msg.document.thumbs[0].file_id, file_name=f"{temp_dir}/thumb.jpg")
-            except:
-                pass
-        custom_caption = await db.get_caption(message.from_user.id)
-        if custom_caption:
-            final_caption = custom_caption.format(filename=file.split("/")[-1], size=humanbytes(file_size))
-        else:
-            final_caption = script.CAPTION.format(file_name=file.split("/")[-1])
-            if msg.caption:
-                final_caption += f"\n\n{msg.caption}"
+                thumbs = getattr(media, "thumbs", None) or []
+                if thumbs:
+                    ph_path = await acc.download_media(
+                        thumbs[0].file_id,
+                        file_name=f"{temp_dir}/thumb.jpg",
+                    )
+            except Exception as e:
+                logger.info(f"Original thumbnail unavailable: {e}")
+
+        custom_caption = await db.get_caption(user.id)
+        filename = os.path.basename(file)
+        try:
+            if custom_caption:
+                final_caption = custom_caption.format(
+                    filename=filename,
+                    file_name=filename,
+                    size=humanbytes(file_size),
+                )
+            else:
+                final_caption = script.CAPTION.format(file_name=filename)
+                if msg.caption:
+                    final_caption += f"\n\n{msg.caption}"
+        except (KeyError, IndexError, ValueError) as e:
+            logger.warning(f"Caption formatting failed: {e}")
+            final_caption = filename
+
+        common = {
+            "chat_id": message.chat.id,
+            "caption": final_caption,
+            "reply_to_message_id": message.id,
+        }
         if msg_type == "Document":
-            await client.send_document(message.chat.id, file, thumb=ph_path, caption=final_caption, progress=progress, progress_args=[message, "up"])
+            await client.send_document(
+                document=file, thumb=ph_path, progress=progress,
+                progress_args=[message, "up"], **common
+            )
         elif msg_type == "Video":
-            await client.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=ph_path, caption=final_caption, progress=progress, progress_args=[message, "up"])
+            await client.send_video(
+                video=file,
+                duration=msg.video.duration,
+                width=msg.video.width,
+                height=msg.video.height,
+                thumb=ph_path,
+                progress=progress,
+                progress_args=[message, "up"],
+                **common,
+            )
         elif msg_type == "Audio":
-            await client.send_audio(message.chat.id, file, thumb=ph_path, caption=final_caption, progress=progress, progress_args=[message, "up"])
+            await client.send_audio(
+                audio=file, thumb=ph_path, progress=progress,
+                progress_args=[message, "up"], **common
+            )
         elif msg_type == "Photo":
-            await client.send_photo(message.chat.id, file, caption=final_caption)
-       
+            await client.send_photo(photo=file, **common)
+
     except Exception as e:
-         await smsg.edit(f"Upload Failed: {e}")
-    if os.path.exists(f'{message.id}upstatus.txt'): os.remove(f'{message.id}upstatus.txt')
-    if os.path.exists(temp_dir): shutil.rmtree(temp_dir)
-    await client.delete_messages(message.chat.id, [smsg.id])
+        logger.exception(f"Download/upload failed for user {user.id}: {e}")
+        try:
+            await smsg.edit_text(
+                "❌ Download/upload failed. Please try again."
+            )
+        except Exception:
+            pass
+    finally:
+        for task in (down_task, up_task):
+            if task and not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+                except Exception:
+                    pass
+
+        for status_file in (down_file, up_file):
+            try:
+                if os.path.exists(status_file):
+                    os.remove(status_file)
+            except OSError as e:
+                logger.warning(f"Status file cleanup failed: {e}")
+
+        try:
+            if os.path.isdir(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+        except OSError as e:
+            logger.warning(f"Temporary directory cleanup failed: {e}")
+
+        try:
+            await smsg.delete()
+        except Exception:
+            pass
+
 @Client.on_callback_query()
 async def button_callbacks(client: Client, callback_query: CallbackQuery):
     data = callback_query.data
@@ -525,7 +666,8 @@ async def button_callbacks(client: Client, callback_query: CallbackQuery):
             message_id=message.id,
             media=InputMediaPhoto(
                 media=SUBSCRIPTION,
-                caption=script.PREMIUM_TEXT.format(callback_query.from_user.mention, UPI_ID, QR_CODE)
+                caption=script.PREMIUM_TEXT.format(UPI_ID, QR_CODE),
+                parse_mode=enums.ParseMode.HTML
             ),
             reply_markup=InlineKeyboardMarkup(buttons)
         )

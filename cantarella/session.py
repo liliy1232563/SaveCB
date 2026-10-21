@@ -281,26 +281,28 @@ async def login_handler(bot: Client, message: Message):
 async def finalize_login(status_msg: Message, temp_client, user_id):
     try:
         session_string = await temp_client.export_session_string()
-        await temp_client.disconnect()
-       
         await db.set_session(user_id, session=session_string)
-       
-        if user_id in LOGIN_STATE:
-            del LOGIN_STATE[user_id]
-           
         await status_msg.edit(
-            "<b>🎉 Login Successful! 🌟</b>\n\n"
-            "<i>Progress: ✅ Phone Number → ✅ Code → ✅ Password</i>\n\n"
-            "<i>Your session has been saved securely. 🔒</i>\n\n"
+            "<b>🎉 Login Successful! 🌟</b>\\n\\n"
+            "<i>Progress: ✅ Phone Number → ✅ Code → ✅ Password</i>\\n\\n"
+            "<i>Your session has been saved securely. 🔒</i>\\n\\n"
             "You can now use all features! 🚀",
             parse_mode=enums.ParseMode.HTML,
             reply_markup=remove_keyboard
         )
     except Exception as e:
-        await status_msg.edit(
-            f"<b>❌ Failed to save session: {e} 😔</b>\n\nPlease try /login again.",
-            parse_mode=enums.ParseMode.HTML,
-            reply_markup=remove_keyboard
-        )
-        if user_id in LOGIN_STATE:
-            del LOGIN_STATE[user_id]
+        try:
+            await status_msg.edit(
+                f"<b>❌ Failed to save session: {e} 😔</b>\\n\\nPlease try /login again.",
+                parse_mode=enums.ParseMode.HTML,
+                reply_markup=remove_keyboard
+            )
+        except Exception:
+            pass
+    finally:
+        try:
+            if getattr(temp_client, "is_connected", False):
+                await temp_client.disconnect()
+        except Exception:
+            pass
+        LOGIN_STATE.pop(user_id, None)
