@@ -10,7 +10,7 @@ from config import ADMINS
 from datetime import date, datetime, timedelta
 from logger import LOGGER
 
-logger = LOGGER(name)
+logger = LOGGER(__name__)
 
 ======================================================
 
